@@ -1,0 +1,111 @@
+name: Build and Deploy to Azure Container Apps
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: cicd-demo
+  ACR_NAME: YOUR_ACR_NAME
+  ACR_LOGIN_SERVER: YOUR_ACR_NAME.azurecr.io
+  RESOURCE_GROUP: cicd-demo-rg
+  CONTAINER_APP_NAME: cicd-demo-app
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Required Files
+        run: |
+          test -f Dockerfile
+          test -f index.html
+          test -f nginx.conf
+
+      - name: Dockerfile Lint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+
+    outputs:
+      imageTag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ env.ACR_LOGIN_SERVER }} \
+            -u "${{ secrets.ACR_USERNAME }}" \
+            --password-stdin
+
+      - name: Generate Image Tag
+        id: tag
+        run: echo "tag=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }} \
+            .
+
+      - name: Push Docker Image
+        run: |
+          docker push \
+          ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Container App
+        run: |
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.imageTag }}
+
+      - name: Show Application URL
+        run: |
+          az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn \
+            -o tsv
+
+  notify:
+    if: always()
+    needs:
+      - validate
+      - build
+      - deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pipeline Summary
+        run: |
+          echo "Validation : ${{ needs.validate.result }}"
+          echo "Build      : ${{ needs.build.result }}"
+          echo "Deploy     : ${{ needs.deploy.result }}"
