@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DevOps Pipeline Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#08090d;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.card{background:#0f1117;border:1px solid #1e2330;border-radius:16px;padding:48px;max-width:640px;width:100%;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:6px;background:#22c55e20;color:#22c55e;border:1px solid #22c55e40;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:28px;letter-spacing:0.04em}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+h1{font-size:32px;font-weight:700;margin-bottom:12px;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+p{color:#64748b;font-size:15px;line-height:1.6;margin-bottom:36px}
+.pipeline{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:36px;flex-wrap:wrap;gap:4px}
+.step{background:#151820;border:1px solid #1e2330;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+.step .ico{font-size:14px}
+.arrow{color:#334155;font-size:14px;margin:0 2px}
+.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:28px}
+.m{background:#151820;border:1px solid #1e2330;border-radius:8px;padding:14px}
+.m .lbl{font-size:10px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px}
+.m .val{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;color:#93c5fd}
+.footer{font-size:11px;color:#334155;font-family:'JetBrains Mono',monospace}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="badge"><div class="dot"></div> DEPLOYED VIA CI/CD</div>
+  <h1>Pipeline Live ✓</h1>
+  <p>This page was automatically built, containerized, and deployed to Azure Container Apps using GitHub Actions. Every git push triggers this entire flow.</p>
+
+  <div class="pipeline">
+    <div class="step"><span class="ico">📝</span> Code Push</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="ico">⚙️</span> GitHub Actions</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="ico">🐳</span> Docker Build</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="ico">📦</span> ACR Push</div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="ico">🚀</span> Azure Deploy</div>
+  </div>
+
+  <div class="meta">
+    <div class="m"><div class="lbl">Environment</div><div class="val">Production</div></div>
+    <div class="m"><div class="lbl">Container</div><div class="val">nginx:alpine</div></div>
+    <div class="m"><div class="lbl">Registry</div><div class="val">Azure ACR</div></div>
+  </div>
+
+  <div class="footer">Built by GitHub Actions · Deployed to Azure Container Apps</div>
+</div>
+</body>
+</html>

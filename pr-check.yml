@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════════════════
+#  PR Check Workflow — runs on every Pull Request
+#  Validates code WITHOUT deploying (safe for feature branches)
+# ═══════════════════════════════════════════════════════════════════
+
+name: 🔍 PR Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  pr-validate:
+    name: 🔍 Validate PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: ✅ Check files
+        run: |
+          test -f app/index.html && echo "✓ index.html OK"
+          test -f Dockerfile     && echo "✓ Dockerfile OK"
+          test -f docker/nginx.conf && echo "✓ nginx.conf OK"
+
+      - name: 🐳 Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          ignore: DL3018,DL3008
+
+      - name: 🐳 Build Docker image (no push — just verify it builds)
+        run: |
+          docker build -t cicd-demo-test:pr-${{ github.event.pull_request.number }} .
+          echo "✓ Docker build succeeded — safe to merge"
+
+      - name: 🧪 Test container starts
+        run: |
+          docker run -d --name test-container -p 8080:80 cicd-demo-test:pr-${{ github.event.pull_request.number }}
+          sleep 3
+          curl -f http://localhost:8080/health && echo "✓ Health check passed"
+          docker stop test-container
+          docker rm test-container
